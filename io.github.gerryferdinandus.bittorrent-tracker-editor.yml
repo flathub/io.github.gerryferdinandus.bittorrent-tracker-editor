@@ -1,14 +1,14 @@
 app-id: io.github.gerryferdinandus.bittorrent-tracker-editor
 runtime: org.kde.Platform
-runtime-version: '5.15-23.08'
+runtime-version: '6.8'
 sdk: org.kde.Sdk
 sdk-extensions:
   - org.freedesktop.Sdk.Extension.freepascal
 command: trackereditor
 finish-args:
-  # need x11 or else the menu item is shown on the wrong place with socket=wayland.
-  - --socket=x11
-  - --env=QT_QPA_PLATFORM=xcb
+  # Set Wayland as default
+  - --socket=wayland
+  - --socket=fallback-x11
   # Allow loading/saving files from anywhere
   - --filesystem=home
   # Download bittorrent trackers
@@ -18,7 +18,7 @@ finish-args:
   - --device=dri
 
 modules:
-  - name: qt5pas
+  - name: qt6pas
     buildsystem: qmake
     config-opts:
       - -after
@@ -26,20 +26,26 @@ modules:
     sources:
       - type: shell
         commands:
-          - cp -r /usr/lib/sdk/freepascal/share/lazarus/lcl/interfaces/qt5/cbindings/. .
+          - cp -r /usr/lib/sdk/freepascal/share/lazarus/lcl/interfaces/qt6/cbindings/. .
   - name: trackereditor
     sources:
       - type: git
         url: https://github.com/GerryFerdinandus/bittorrent-tracker-editor.git
-        commit: af12590ceb7165cc82f3027d217ebbaa5662267d
+        commit: 34c4d02b28ee2f860c34374b72646f815c07e26f
     buildsystem: simple
     build-commands:
       - |
         . /usr/lib/sdk/freepascal/enable.sh
-        lazbuild --lazarusdir="$LAZARUS_DIR" --build-mode=Release --widgetset="qt5" source/project/tracker_editor/trackereditor.lpi
-        install -Dm755 enduser/trackereditor -t $FLATPAK_DEST/bin
-        install -Dm644 metainfo/*.png -t $FLATPAK_DEST/share/icons/hicolor/512x512/apps
-        install -Dm644 metainfo/*.metainfo.xml -t $FLATPAK_DEST/share/metainfo
-        install -Dm644 metainfo/*.desktop -t $FLATPAK_DEST/share/applications
+
+        # Build trackereditor
+        lazbuild --lazarusdir="$LAZARUS_DIR" --build-mode=Release --widgetset="qt6" source/project/tracker_editor/trackereditor.lpi
+
+        # Install trackereditor
+        install -Dm755 enduser/trackereditor -t $FLATPAK_DEST/bin/
+
+        # Install desktop file, icon and AppData manifest
+        install -Dm644 metainfo/${FLATPAK_ID}.png -t $FLATPAK_DEST/share/icons/hicolor/256x256/apps/
+        install -Dm644 metainfo/${FLATPAK_ID}.metainfo.xml -t $FLATPAK_DEST/share/metainfo/
+        install -Dm644 metainfo/${FLATPAK_ID}.desktop -t $FLATPAK_DEST/share/applications/
 
 
